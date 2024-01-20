@@ -47,10 +47,10 @@ func end(state GameState) {
 // See https://docs.battlesnake.com/api/example-move for available data
 func move(state GameState) BattlesnakeMoveResponse {
 
-	isMoveSafe := map[string]bool{
+	possibleMoves := map[string]bool{
 		"up":    true,
-		"down":  true,
-		"left":  true,
+		"down": true,
+		"left": true,
 		"right": true,
 	}
 
@@ -69,6 +69,42 @@ func move(state GameState) BattlesnakeMoveResponse {
 
 	} else if myNeck.Y > myHead.Y { // Neck is above head, don't move up
 		isMoveSafe["up"] = false
+	}
+
+	// Check if the next move would cause us to collide with the board boundaries
+	boardWidth := state.Board.Width
+	boardHeight := state.Board.Height
+	if myHead.X+1 >= boardWidth {
+		possibleMoves["right"] = false
+	}
+	if myHead.X-1 < 0 {
+		possibleMoves["left"] = false
+	}
+	if myHead.Y+1 >= boardHeight {
+		possibleMoves["up"] = false
+	}
+	if myHead.Y-1 < 0 {
+		possibleMoves["down"] = false
+	}
+
+	// Check if the next move would cause us to collide with another Battlesnake
+	for _, snake := range state.Board.Snakes {
+		if snake.ID != state.You.ID {
+			for _, coord := range snake.Body {
+				if coord.X == myHead.X+1 && coord.Y == myHead.Y {
+					possibleMoves["right"] = false
+				}
+				if coord.X == myHead.X-1 && coord.Y == myHead.Y {
+					possibleMoves["left"] = false
+				}
+				if coord.Y == myHead.Y+1 && coord.X == myHead.X {
+					possibleMoves["up"] = false
+				}
+				if coord.Y == myHead.Y-1 && coord.X == myHead.X {
+					possibleMoves["down"] = false
+				}
+			}
+		}
 	}
 
 	// TODO: Step 1 - Prevent your Battlesnake from moving out of bounds
